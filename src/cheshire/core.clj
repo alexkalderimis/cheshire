@@ -156,6 +156,24 @@
                                            factory/json-factory) reader)
                     key-fn array-coerce-fn))))
 
+(defn- parse-from-target* 
+  [^JsonParser parser target key-fn array-coerce-fn]
+  (lazy-seq
+    (let [elem (parse/parse-from-target parser target key-fn eof array-coerce-fn)]
+      (when-not (identical? elem eof) elem))))
+
+(defn parse-from-target
+  "Returns the result of parsing the object found under the given key"
+  ([reader target] (parse-from-target reader target nil nil))
+  ([reader target key-fn] (parse-from-target reader target key-fn nil))
+  ([^BufferedReader reader target key-fn array-coerce-fn]
+      (when reader
+       (parse-from-target* (.createJsonParser ^JsonFactory
+                                       (or factory/*json-factory*
+                                           factory/json-factory) reader)
+                    target key-fn array-coerce-fn))))
+
+
 (defn parsed-smile-seq
   "Returns a lazy seq of Clojure objects corresponding to the SMILE read from
   the given reader. The seq continues until the end of the reader is reached.

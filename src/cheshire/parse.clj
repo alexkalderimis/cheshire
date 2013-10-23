@@ -87,3 +87,25 @@
         (lazily-parse-array jp key-fn *use-bigdecimals?* array-coerce-fn))
 
       (parse* jp key-fn *use-bigdecimals?* array-coerce-fn))))
+
+(defn- skip-to-target [^JsonParser jp target eof]
+  (.nextToken jp)
+  (loop [token (.getCurrentToken jp)]
+    (condp identical? token
+      nil eof
+
+      JsonToken/FIELD_NAME
+      (if (= target (.getText jp)) nil (recur (.nextToken jp)))
+
+      JsonToken/START_ARRAY
+      (do
+        (parse-array jp identity *use-bigdecimals?* (constantly []))
+        (recur (.nextToken jp)))
+
+      (recur (.nextToken jp)))))
+
+(defn parse-from-target [^JsonParser jp target key-fn eof array-coerce-fn]
+ (let [key-fn (or (if (identical? key-fn true) keyword key-fn) identity)]
+   (skip-to-target jp target eof)
+   (parse jp key-fn eof array-coerce-fn)))
+

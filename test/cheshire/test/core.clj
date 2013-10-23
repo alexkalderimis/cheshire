@@ -287,3 +287,14 @@
     (gen/add-encoder CTestR (fn [obj jg] (gen/encode-symbol 'foo jg)))
     (is (= "foo" (json/decode (json/encode thing) true)))
     (remove)))
+
+(deftest t-targeted-parse
+  (let [read-str #(BufferedReader. (StringReader. %))]
+    (let [br (read-str "{\"foo\":\"bar\",\"target\":[1,2,3]}")]
+      (is (= (list 1 2 3) (json/parse-from-target br "target"))))
+    (let [br (read-str "{\"foo\":\"bar\",\"target\":{\"x\":\"y\"}}")]
+      (is (= (list [:x "y"]) (json/parse-from-target br "target" keyword))))
+    (let [br (read-str "{\"foo\":\"bar\",\"target\":{\"a\":1,\"b\":2}}")]
+      (is (= (seq {:a 1 :b 2}) (json/parse-from-target br "target" keyword))))
+    (let [br (read-str "{\"foo\":\"bar\",\"target\":\"quux\"}")]
+      (is (= "quux") (json/parse-from-target br "target" keyword)))))
